@@ -4,7 +4,7 @@
 ## Build
 
 ```
-go build gen.go
+go build
 ```
 
 ## Usage
@@ -12,5 +12,7 @@ go build gen.go
 Generate shellcode by CS/MSF first, then generate the wrapped-shellcode-binary:
 
 ```
-./gen shellcode.bin [x64/x86]
+./gld shellcode.bin [x64/x86]
 ```
+
+In default, gld will detect whether it's in a VM and whether there is any disassembly process.

