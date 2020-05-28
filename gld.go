@@ -45,7 +45,7 @@ const TEMP = "temp.go"
 
 func main() {
 	if len(os.Args) < 2 {
-		println("./gen shellcode.bin [x64/x86]")
+		println("./gld shellcode.bin [x64/x86]")
 		return
 	}
 
