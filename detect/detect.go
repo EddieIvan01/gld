@@ -80,7 +80,7 @@ func checkResource() bool {
 
 var blacklistDBG = []string{
 	"IDA",
-	"OLLYDBG",
+	"OLLY",
 	"WINDBG",
 	"GHIDRA",
 }
@@ -104,6 +104,13 @@ func detectDBG() bool {
 			}
 		}
 		err = syscall.Process32Next(handle, &pe32)
+	}
+
+	kernel32 := syscall.NewLazyDLL("kernel32.dll")
+	isDebuggerPresent := kernel32.NewProc("IsDebuggerPresent")
+	ret, _, _ := isDebuggerPresent.Call()
+	if ret != 0 {
+		return true
 	}
 
 	return false
