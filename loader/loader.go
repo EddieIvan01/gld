@@ -10,7 +10,7 @@ var (
 )
 
 const (
-	PAGE_EXECUTE_READWRITE = 0x40
+	PAGE_EXECUTE_READ = 0x20
 )
 
 func Init() error {
