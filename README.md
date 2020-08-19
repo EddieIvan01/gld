@@ -2,7 +2,7 @@
 
 ## Usage
 
-Generate shellcode by CS/MSF first, then use gld to compile wrapped-shellcode-binary:
+Generate shellcode via CS/MSF first, then use gld to compile wrapped-binary:
 
 ```
 ./gld shellcode.bin [x64/x86]
@@ -12,9 +12,9 @@ Generate shellcode by CS/MSF first, then use gld to compile wrapped-shellcode-bi
 
 ### Loader
 
-+ Change page's protect attribute to RWX then execute (`VirtualProtect`  and syscall)
-+ Dynamic loading DLL and target procedure (`LoadLibrary/GetProcAddress`)
-+ Don't use string literal and use random procedure name, to avoid static memory matching
++ Shellcode is encrypted via AES-GCM, it will be decrypted and loaded in runtime
++ Use `ntdll!ZwProtectVirtualMemory` instead of `kernelbase!VirtualProtect` (bypass possible hooks) to bypass DEP 
++ Use local variable instead of string literal to pass procedure name (`string([]byte{...})`), to avoid static memory matching
 
 ### Detector
 

