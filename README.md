@@ -1,5 +1,7 @@
 # Go shellcode LoaDer
 
+**This repo is a demo and lacks enough features to bypass AV/EDR. I have written a private framework with more evasion techs, it may be made public in the future**
+
 ## Usage
 
 Generate shellcode via CS/MSF first, then use gld to compile wrapped-binary:
